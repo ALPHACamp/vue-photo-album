@@ -64,8 +64,9 @@ export default {
         description: this.newDescription,
         file_location: this.file
       };
-      console.log("photo form submit");
-      console.dir(payload);
+
+      // photo form submit
+      this.$emit("photo-form-submit", payload);
     }
   }
 };
