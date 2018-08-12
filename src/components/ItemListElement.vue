@@ -60,6 +60,7 @@ export default {
         .delete(deleteUrl, { params })
         .then(function(res) {
           console.log(res);
+          that.$emit("destroy-item", { id: that.id });
         })
         .catch(function(err) {
           console.error(err.response.data);
