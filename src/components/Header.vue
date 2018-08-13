@@ -14,6 +14,7 @@
 </template>
 
 <script>
+import axios from "axios";
 export default {
   data() {
     return {
@@ -37,7 +38,64 @@ export default {
     },
     handleLogout: function() {
       console.log("logout");
+      var sessionData = JSON.parse(localStorage.getItem("photo-album-user"));
+      if (sessionData == null) {
+        //Early exit from function when there’s no sessionData
+        return;
+      }
+      var token = sessionData.authToken;
+
+      //1. access logout API
+      var url = "http://35.185.111.183/api/v1/logout";
+      axios
+        .post(url, { auth_token: token })
+        .then(function(res) {
+          console.log(res);
+        })
+        .catch(function(err) {
+          console.error(err.response.data.errors);
+        });
+
+      //2. emit 'auth-state' event to $bus
+      this.$bus.$emit("auth-state", { action: "logout" });
+
+      //3. clean up localstorage
+      localStorage.removeItem("photo-album-user");
+
+      //4. redirect to index
+      this.$router.push("/");
+    },
+    handleAuthState: function(payload) {
+      // 1. change the state of this.isLogin
+      // 2. get this.userEmail for localStorage
+      console.dir(payload);
+      var action = payload.action;
+      if (action == "login") {
+        this.isLogin = true;
+        this.userEmail = JSON.parse(
+          localStorage.getItem("photo-album-user")
+        ).email;
+      } else if (action == "logout") {
+        this.isLogin = false;
+        this.userEmail = "";
+      }
     }
+  },
+  created() {
+    // 1. subscribe 'auth-state' event from bus
+    var that = this;
+    this.$bus.$on("auth-state", this.handleAuthState);
+
+    // 2. check auth state form local storage
+    var sessionData = JSON.parse(localStorage.getItem("photo-album-user"));
+    if (sessionData) {
+      this.handleAuthState({ action: "login" });
+    } else {
+      this.handleAuthState({ action: "logout" });
+    }
+  },
+  beforeDestroy: function() {
+    this.$bus.$off("auth-state", this.handleAuthState);
   }
 };
 </script>
